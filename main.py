@@ -57,7 +57,8 @@ Returns a summary from searching Wikipedia
 stac:
 e.g. stac: bbox=[-73.21, 43.99, -73.12, 44.05] && datetime=['2019-01-01T00:00:00Z', '2019-01-02T00:00:00Z']
 Will query the Microsoft Planetary Computer STAC endpoint for STAC records for that bbox and datetime and return a JSON representation of the item assets returned from the STAC API.
-Please ensure the STAC query is entered exactly as above, with a bbox representing the lat / lng extents of the area to get and ensure there is a space after the comma between elements of the array.
+Please ensure the STAC query is entered exactly as above, with a bbox representing the lat / lng extents of the area.
+
 and the datetime representing timestamps for start and end time to search the catalog within. Always return the rendered preview URL from the items.
 
 Please remember that these are your only three available actions. Do not attempt to put any word after "Action: " other than wikipedia, calculate or stac. THIS IS A HARD RULE.
@@ -112,17 +113,24 @@ def query(question, max_turns=5):
 
 
 def stac(q):
-    bbox_regex = r"bbox=\[(.*?)\]"
-    datetime_regex = r"datetime=\[(.*?)\]"
+    bbox_match = re.search(r'bbox=\[(.*?)\]', q)
+    datetime_match = re.search(r'datetime=\[(.*?)\]', q)
 
-    # find the bbox and datetime values using regular expressions
-    bbox_match = re.search(bbox_regex, q)
-    datetime_match = re.search(datetime_regex, q)
+    # Check if bbox and datetime arrays are found
+    if bbox_match and datetime_match:
+        bbox_str = bbox_match.group(1)
+        datetime_str = datetime_match.group(1)
 
-    # split the bbox and datetime values into arrays
-    bbox = bbox_match.group(1).split(", ")
-    datetime = datetime_match.group(1).split(", ")
-    datetime = [d.strip().strip("'") for d in datetime]
+        # Remove spaces after commas, if any
+        bbox_str = bbox_str.replace(', ', ',')
+        datetime_str = datetime_str.replace(', ', ',')
+
+        # Convert bbox and datetime arrays to lists
+        bbox = [float(x) if '.' in x else int(x) for x in bbox_str.split(',')]
+        datetime = [x.strip('\'') for x in datetime_str.split(',')]
+    else:
+        raise Exception("ChatGPT did a weirdo", q)
+
     print('datetime', datetime)
     api = Client.open(stac_endpoint)
 
