@@ -124,7 +124,7 @@ def stac(q):
     datetime = datetime_match.group(1).split(", ")
     datetime = [d.strip().strip("'") for d in datetime]
     print('datetime', datetime)
-    api = Client.open('https://planetarycomputer.microsoft.com/api/stac/v1')
+    api = Client.open(stac_endpoint)
 
     results = api.search(
         max_items=5,
