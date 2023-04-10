@@ -15,10 +15,7 @@ python
 
 from main import query
 
-query("Can you find me satellite images of Mumbai on 7th November, 2014?")
-
-> query("Can you get me satellite imagery for Seattle for 10th December, 2
-   ...: 018?")
+> query("Can you get me satellite imagery for Seattle for 10th December, 2018?")
 
 Observation: The STAC query returns a list of assets that are available for the given parameters of the bounding box and datetime, which includes imagery from NOAA GOES satellite (GLM-L2-LCFA/2018/345/00) as well as MODIS collection 6.1 (MYD21A2.A2018345.h09v04.061.2021350231530) which has several different assets available, including metadata and various thermal bands. The rendered preview image can be viewed at https://planetarycomputer.microsoft.com/api/data/v1/item/preview.png?collection=modis-21A2-061&item=MYD21A2.A2018345.h09v04.061.2021350231530&assets=LST_Day_1KM&tile_format=png&colormap_name=jet&rescale=255%2C310&format=png
 ```
