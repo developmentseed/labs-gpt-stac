@@ -1,6 +1,34 @@
 <html>
     <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" />
+        <style>
+            .hidden {
+                display: none;
+            }
+            #map {
+                height: 500px;
+            }
 
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                text-align: left;
+            }
+
+            th, td {
+                padding: 10px;
+                border-bottom: 1px solid #ddd;
+            }
+
+            th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+
+            td img {
+                max-width: 100%;
+            }
+        </style>
     </head>
     <body>
         <form id="form">
@@ -8,24 +36,85 @@
             <button id="submitPrompt">
                 Submit
             </button>
+            <span id="loading" class="hidden">Loading...</span>
         </form>
         <div id="results">
-            <pre id="rawResult">
-
-            </pre>
+            <div id="map"></div>
+            <table id="table"></table>
         </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
         <script>
+
+            // Init map
+            const map = L.map('map').setView([0, 0], 3);
+
+            // Add the base map
+            const basemap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+                maxZoom: 18
+            }).addTo(map);
+            
             const $form = document.getElementById('form');
             $form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const promptText = document.getElementById('prompt').value;
+                document.getElementById("submitPrompt").classList.add('hidden');
+                document.getElementById("loading").classList.remove('hidden');
                 fetch(`/chatgpt?prompt=${promptText}`).then(response => {
                     return response.json();
                 }).then(data => {
-                    const jsonString = JSON.stringify(data, null, 2);
-                    document.getElementById('rawResult').innerText = jsonString;
+                    // const jsonString = JSON.stringify(data, null, 2);
+                    // document.getElementById('rawResult').innerText = jsonString;
+                    renderItems(data.stac);
+                    document.getElementById("submitPrompt").classList.remove('hidden');
+                    document.getElementById("loading").classList.add('hidden');
+                }).catch(e => {
+                    console.log('error', e);
+                    alert("Sometimes in life there are errors. This is one of those times. The console might have helpful details.")
                 })
             });
+
+            function renderItems(featureCollection) {
+                featureCollection.features.forEach(item => {
+                    // Add the geometry to the map
+                    const geojson = L.geoJSON(item.geometry);
+                    geojson.addTo(map);
+
+                    // Add a row to the table
+                    const row = document.createElement('tr');
+
+                    // Add the thumbnail
+                    const thumbnail = document.createElement('td');
+                    const img = document.createElement('img');
+                    img.src = item.assets.rendered_preview.href;
+                    thumbnail.appendChild(img);
+                    row.appendChild(thumbnail);
+
+                    // Add the title
+                    const title = document.createElement('td');
+                    title.textContent = item.properties.title;
+                    row.appendChild(title);
+
+                    // Add the datetime
+                    const datetime = document.createElement('td');
+                    datetime.textContent = item.properties.datetime;
+                    row.appendChild(datetime);
+
+                    // Add the platform
+                    const platform = document.createElement('td');
+                    platform.textContent = item.properties.platform;
+                    row.appendChild(platform);
+
+                    // Add the instruments
+                    const instruments = document.createElement('td');
+                    instruments.textContent = item.properties.instruments.join(', ');
+                    row.appendChild(instruments);
+
+                    // Add the row to the table
+                    const table = document.getElementById('table');
+                    table.appendChild(row);
+                });
+            }
         </script>
     </body>
 </html>
