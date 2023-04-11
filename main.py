@@ -5,6 +5,7 @@ import re
 import httpx
 from pystac_client import Client
 from fastapi import FastAPI
+from opencage.geocoder import OpenCageGeocode
 import json
 import os
 
@@ -13,9 +14,14 @@ app = FastAPI()
 if not 'OPENAI_API_KEY' in os.environ:
     raise Exception("OPENAI_API_KEY must be defined in your environment")
 
+if not 'OPENCAGE_API_KEY' in os.environ:
+    raise Exception("OPENCAGE_API_KEY is required")
+
 openai.api_key = os.environ['OPENAI_API_KEY']
 stac_endpoint = "https://planetarycomputer.microsoft.com/api/stac/v1"
 
+geocoder_key = os.environ['OPENCAGE_API_KEY']
+geocoder = OpenCageGeocode(geocoder_key)
 
 @app.get("/")
 def health():
@@ -172,6 +178,14 @@ async def wikipedia(q):
             "format": "json"
         })
         return response.json()["query"]["search"][0]["snippet"]
+
+async def geocode(q):
+    async with httpx.AsyncClient() as client:
+        response = geocoder.geocode(q, no_annotations='1')
+        if response and response['results']:
+            return response['results'][0]['bounds']
+        else:
+            return None
 
 def calculate(what):
     return eval(what)
