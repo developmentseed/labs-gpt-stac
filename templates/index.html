@@ -3,22 +3,21 @@
 
     </head>
     <body>
-        <div id="form">
-            <textarea id="prompt" placeholder="Give me satellite imagery around the time of the Nepal Earthquake in 2015 near the epicenter">
-
-            </textarea><br />
+        <form id="form">
+            <textarea rows="10" cols="40" id="prompt" placeholder="Give me satellite imagery around the time of the Nepal Earthquake in 2015 near the epicenter"></textarea><br />
             <button id="submitPrompt">
                 Submit
             </button>
-        </div>
+        </form>
         <div id="results">
             <pre id="rawResult">
 
             </pre>
         </div>
         <script>
-            const $submit = document.getElementById('submitPrompt');
-            $submit.addEventListener('click', function(e) {
+            const $form = document.getElementById('form');
+            $form.addEventListener('submit', function(e) {
+                e.preventDefault();
                 const promptText = document.getElementById('prompt').value;
                 fetch(`/chatgpt?prompt=${promptText}`).then(response => {
                     return response.json();
