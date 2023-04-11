@@ -120,7 +120,12 @@ async def query(question, max_turns=5):
             print(" -- running {} {}".format(action, action_input))
             observation = known_actions[action](action_input)
             print("Observation:", observation)
-            next_prompt = "Observation: {}".format(observation)
+
+            # If the action is querying the STAC API, just return the results, don't re-prompt
+            if action == 'stac':
+                return observation
+            else:
+                next_prompt = "Observation: {}".format(observation)
         else:
             return result
 
@@ -152,8 +157,7 @@ def stac(q):
         bbox=bbox,
         datetime=datetime,
     )
-    items = [i.get_assets() for i in results.items()]
-    return items[0:2]
+    return results.item_collection_as_dict()
 
 async def wikipedia(q):
     async with httpx.AsyncClient() as client:
