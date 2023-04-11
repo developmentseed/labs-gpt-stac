@@ -4,14 +4,27 @@ import openai
 import re
 import httpx
 from pystac_client import Client
+from fastapi import FastAPI
 import json
 import os
+
+app = FastAPI()
 
 if not 'OPENAI_API_KEY' in os.environ:
     raise Exception("OPENAI_API_KEY must be defined in your environment")
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 stac_endpoint = "https://planetarycomputer.microsoft.com/api/stac/v1"
+
+
+@app.get("/")
+def health():
+    return {"status": "success"}
+
+@app.get("/chatgpt")
+async def chatgpt(prompt: str):
+    return await query(prompt)
+
 
 class ChatBot:
     def __init__(self, system=""):
@@ -90,7 +103,7 @@ You will be called again with the output from the STAC query as JSON. Use that t
 
 action_re = re.compile('^Action: (\w+): (.*)$')
 
-def query(question, max_turns=5):
+async def query(question, max_turns=5):
     i = 0
     bot = ChatBot(prompt)
     next_prompt = question
@@ -109,7 +122,7 @@ def query(question, max_turns=5):
             print("Observation:", observation)
             next_prompt = "Observation: {}".format(observation)
         else:
-            return
+            return result
 
 
 def stac(q):
@@ -142,13 +155,15 @@ def stac(q):
     items = [i.get_assets() for i in results.items()]
     return items[0:2]
 
-def wikipedia(q):
-    return httpx.get("https://en.wikipedia.org/w/api.php", params={
-        "action": "query",
-        "list": "search",
-        "srsearch": q,
-        "format": "json"
-    }).json()["query"]["search"][0]["snippet"]
+async def wikipedia(q):
+    async with httpx.AsyncClient() as client:
+        response = await client.get("https://en.wikipedia.org/w/api.php", params={
+            "action": "query",
+            "list": "search",
+            "srsearch": q,
+            "format": "json"
+        })
+        return response.json()["query"]["search"][0]["snippet"]
 
 def calculate(what):
     return eval(what)
