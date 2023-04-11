@@ -118,7 +118,7 @@ async def query(question, max_turns=5):
             if action not in known_actions:
                 raise Exception("Unknown action: {}: {}".format(action, action_input))
             print(" -- running {} {}".format(action, action_input))
-            observation = known_actions[action](action_input)
+            observation = await known_actions[action](action_input)
             print("Observation:", observation)
 
             # If the action is querying the STAC API, just return the results, don't re-prompt
@@ -153,11 +153,15 @@ def stac(q):
     api = Client.open(stac_endpoint)
 
     results = api.search(
-        max_items=5,
+        max_items=10,
         bbox=bbox,
         datetime=datetime,
     )
-    return results.item_collection_as_dict()
+    return {
+        'stac': results.item_collection_as_dict(),
+        'bbox': bbox,
+        'datetime': datetime
+    }
 
 async def wikipedia(q):
     async with httpx.AsyncClient() as client:
