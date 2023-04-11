@@ -4,14 +4,37 @@ import openai
 import re
 import httpx
 from pystac_client import Client
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+from opencage.geocoder import OpenCageGeocode
 import json
 import os
+
+app = FastAPI()
 
 if not 'OPENAI_API_KEY' in os.environ:
     raise Exception("OPENAI_API_KEY must be defined in your environment")
 
+if not 'OPENCAGE_API_KEY' in os.environ:
+    raise Exception("OPENCAGE_API_KEY is required")
+
 openai.api_key = os.environ['OPENAI_API_KEY']
 stac_endpoint = "https://planetarycomputer.microsoft.com/api/stac/v1"
+
+geocoder_key = os.environ['OPENCAGE_API_KEY']
+geocoder = OpenCageGeocode(geocoder_key)
+
+app.mount("/templates", StaticFiles(directory="templates"), name="templates")
+
+@app.get("/status")
+def health():
+    return {"status": "success"}
+
+@app.get("/chatgpt")
+async def chatgpt(prompt: str):
+    return await query(prompt)
+
 
 class ChatBot:
     def __init__(self, system=""):
@@ -20,13 +43,13 @@ class ChatBot:
         if self.system:
             self.messages.append({"role": "system", "content": system})
     
-    def __call__(self, message):
+    async def __call__(self, message):
         self.messages.append({"role": "user", "content": message})
-        result = self.execute()
+        result = await self.execute()
         self.messages.append({"role": "assistant", "content": result})
         return result
     
-    def execute(self):
+    async def execute(self):
         completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=self.messages)
         # Uncomment this to print out token usage each time, e.g.
         # {"completion_tokens": 86, "prompt_tokens": 26, "total_tokens": 112}
@@ -61,7 +84,7 @@ Please ensure the STAC query is entered exactly as above, with a bbox representi
 
 and the datetime representing timestamps for start and end time to search the catalog within. Always return the rendered preview URL from the items.
 
-Please remember that these are your only three available actions. Do not attempt to put any word after "Action: " other than wikipedia, calculate or stac. THIS IS A HARD RULE.
+Please remember that these are your only three available actions. Do not attempt to put any word after "Action: " other than wikipedia, calculate or stac. THIS IS A HARD RULE. DO NOT BREAK IT AT ANY COST. DO NOT MAKE UP YOUR OWN ACTIONS.
 
 Always look things up on Wikipedia if you have the opportunity to do so.
 
@@ -90,13 +113,13 @@ You will be called again with the output from the STAC query as JSON. Use that t
 
 action_re = re.compile('^Action: (\w+): (.*)$')
 
-def query(question, max_turns=5):
+async def query(question, max_turns=5):
     i = 0
     bot = ChatBot(prompt)
     next_prompt = question
     while i < max_turns:
         i += 1
-        result = bot(next_prompt)
+        result = await bot(next_prompt)
         print(result)
         actions = [action_re.match(a) for a in result.split('\n') if action_re.match(a)]
         if actions:
@@ -105,14 +128,19 @@ def query(question, max_turns=5):
             if action not in known_actions:
                 raise Exception("Unknown action: {}: {}".format(action, action_input))
             print(" -- running {} {}".format(action, action_input))
-            observation = known_actions[action](action_input)
+            observation = await known_actions[action](action_input)
             print("Observation:", observation)
-            next_prompt = "Observation: {}".format(observation)
+
+            # If the action is querying the STAC API, just return the results, don't re-prompt
+            if action == 'stac':
+                return observation
+            else:
+                next_prompt = "Observation: {}".format(observation)
         else:
-            return
+            return result
 
 
-def stac(q):
+async def stac(q):
     bbox_match = re.search(r'bbox=\[(.*?)\]', q)
     datetime_match = re.search(r'datetime=\[(.*?)\]', q)
 
@@ -135,20 +163,33 @@ def stac(q):
     api = Client.open(stac_endpoint)
 
     results = api.search(
-        max_items=5,
+        max_items=10,
         bbox=bbox,
         datetime=datetime,
     )
-    items = [i.get_assets() for i in results.items()]
-    return items[0:2]
+    return {
+        'stac': results.item_collection_as_dict(),
+        'bbox': bbox,
+        'datetime': datetime
+    }
 
-def wikipedia(q):
-    return httpx.get("https://en.wikipedia.org/w/api.php", params={
-        "action": "query",
-        "list": "search",
-        "srsearch": q,
-        "format": "json"
-    }).json()["query"]["search"][0]["snippet"]
+async def wikipedia(q):
+    async with httpx.AsyncClient() as client:
+        response = await client.get("https://en.wikipedia.org/w/api.php", params={
+            "action": "query",
+            "list": "search",
+            "srsearch": q,
+            "format": "json"
+        })
+        return response.json()["query"]["search"][0]["snippet"]
+
+async def geocode(q):
+    async with httpx.AsyncClient() as client:
+        response = geocoder.geocode(q, no_annotations='1')
+        if response and response['results']:
+            return response['results'][0]['bounds']
+        else:
+            return None
 
 def calculate(what):
     return eval(what)

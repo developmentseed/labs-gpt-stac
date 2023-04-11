@@ -34,4 +34,9 @@ This is a very rough quick and dirty PoC. To improve this:
 
 
 
-   
+## Server setup
+This is now wrapped in a lightweight FastAPI application
+
+* `docker build -t fastapi-chatgpt-app .`
+* `docker run -p 8000:8000 -e OPENAI_API_KEY=<your_openai_api_key> fastapi-chatgpt-app`
+* Send a request like this: `http://localhost:8000/chatgpt?prompt=%22find%20me%20satellite%20imagery%20in%20Bangalore%20for%20December%2014,%202017%22`
