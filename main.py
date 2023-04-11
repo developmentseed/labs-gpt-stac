@@ -39,8 +39,8 @@ class ChatBot:
         self.messages.append({"role": "assistant", "content": result})
         return result
     
-    def execute(self):
-        completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=self.messages)
+    async def execute(self):
+        completion = await openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=self.messages)
         # Uncomment this to print out token usage each time, e.g.
         # {"completion_tokens": 86, "prompt_tokens": 26, "total_tokens": 112}
         # print(completion.usage)
