@@ -43,14 +43,14 @@ class ChatBot:
         if self.system:
             self.messages.append({"role": "system", "content": system})
     
-    def __call__(self, message):
+    async def __call__(self, message):
         self.messages.append({"role": "user", "content": message})
-        result = self.execute()
+        result = await self.execute()
         self.messages.append({"role": "assistant", "content": result})
         return result
     
     async def execute(self):
-        completion = await openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=self.messages)
+        completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=self.messages)
         # Uncomment this to print out token usage each time, e.g.
         # {"completion_tokens": 86, "prompt_tokens": 26, "total_tokens": 112}
         # print(completion.usage)
@@ -84,7 +84,7 @@ Please ensure the STAC query is entered exactly as above, with a bbox representi
 
 and the datetime representing timestamps for start and end time to search the catalog within. Always return the rendered preview URL from the items.
 
-Please remember that these are your only three available actions. Do not attempt to put any word after "Action: " other than wikipedia, calculate or stac. THIS IS A HARD RULE.
+Please remember that these are your only three available actions. Do not attempt to put any word after "Action: " other than wikipedia, calculate or stac. THIS IS A HARD RULE. DO NOT BREAK IT AT ANY COST. DO NOT MAKE UP YOUR OWN ACTIONS.
 
 Always look things up on Wikipedia if you have the opportunity to do so.
 
@@ -119,7 +119,7 @@ async def query(question, max_turns=5):
     next_prompt = question
     while i < max_turns:
         i += 1
-        result = bot(next_prompt)
+        result = await bot(next_prompt)
         print(result)
         actions = [action_re.match(a) for a in result.split('\n') if action_re.match(a)]
         if actions:
@@ -140,7 +140,7 @@ async def query(question, max_turns=5):
             return result
 
 
-def stac(q):
+async def stac(q):
     bbox_match = re.search(r'bbox=\[(.*?)\]', q)
     datetime_match = re.search(r'datetime=\[(.*?)\]', q)
 

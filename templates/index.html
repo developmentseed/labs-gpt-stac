@@ -18,7 +18,7 @@
         </div>
         <script>
             const $submit = document.getElementById('submitPrompt');
-            $submit.on('click', function(e) {
+            $submit.addEventListener('click', function(e) {
                 const promptText = document.getElementById('prompt').value;
                 fetch(`/chatgpt?prompt=${promptText}`).then(response => {
                     console.log(response);
