@@ -1,0 +1,30 @@
+<html>
+    <head>
+
+    </head>
+    <body>
+        <div id="form">
+            <textarea id="prompt" placeholder="Give me satellite imagery around the time of the Nepal Earthquake in 2015 near the epicenter">
+
+            </textarea><br />
+            <button id="submitPrompt">
+                Submit
+            </button>
+        </div>
+        <div id="results">
+            <pre id="rawResult">
+
+            </pre>
+        </div>
+        <script>
+            const $submit = document.getElementById('submitPrompt');
+            $submit.on('click', function(e) {
+                const promptText = document.getElementById('prompt').value;
+                fetch(`/chatgpt?prompt=${promptText}`).then(response => {
+                    console.log(response);
+                    document.getElementById('rawResult').innerText = JSON.stringify(response, null, 2);
+                })
+            });
+        </script>
+    </body>
+</html>
