@@ -5,6 +5,8 @@ import re
 import httpx
 from pystac_client import Client
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
 from opencage.geocoder import OpenCageGeocode
 import json
 import os
@@ -23,7 +25,9 @@ stac_endpoint = "https://planetarycomputer.microsoft.com/api/stac/v1"
 geocoder_key = os.environ['OPENCAGE_API_KEY']
 geocoder = OpenCageGeocode(geocoder_key)
 
-@app.get("/")
+app.mount("/", StaticFiles(directory="templates"), name="templates")
+
+@app.get("/status")
 def health():
     return {"status": "success"}
 
