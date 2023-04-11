@@ -25,7 +25,7 @@ stac_endpoint = "https://planetarycomputer.microsoft.com/api/stac/v1"
 geocoder_key = os.environ['OPENCAGE_API_KEY']
 geocoder = OpenCageGeocode(geocoder_key)
 
-app.mount("/", StaticFiles(directory="templates"), name="templates")
+app.mount("/templates", StaticFiles(directory="templates"), name="templates")
 
 @app.get("/status")
 def health():
