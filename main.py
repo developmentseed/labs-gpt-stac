@@ -191,7 +191,7 @@ async def geocode(q):
         else:
             return None
 
-def calculate(what):
+async def calculate(what):
     return eval(what)
 
 known_actions = {
