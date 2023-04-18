@@ -1,3 +1,5 @@
+**DEPRECATED**: This repository is still useful for context and to see an initial implementation of this idea. However, this work is being continued in https://github.com/developmentseed/haystac with a more "proper" structure using LangChain
+
 ### Implement the ReAct pattern to connect an LLM with a STAC API endpoint
 
 This is inspired by Simon Willison's blog-post: https://til.simonwillison.net/llms/python-react-pattern

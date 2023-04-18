@@ -103,9 +103,21 @@
             function renderItems(featureCollection) {
                 featureCollection.features.forEach(item => {
                     // Add the geometry to the map
+
+                    // Loop through the map's layers and clear existing layers
+                    map.eachLayer(layer => {
+                        // Check if the layer is a GeoJSON layer
+                        if (layer instanceof L.GeoJSON) {
+                            // Remove the layer from the map
+                            map.removeLayer(layer);
+                        }
+                    });
                     const geojson = L.geoJSON(item.geometry);
                     geojson.addTo(map);
                     map.fitBounds(geojson.getBounds());
+
+                    // clear the table first
+                    document.getElementById('table').innerHTML = '';
                     // Add a row to the table
                     const row = document.createElement('tr');
 
